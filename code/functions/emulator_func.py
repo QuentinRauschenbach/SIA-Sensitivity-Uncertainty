@@ -176,59 +176,53 @@ def find_spline_correction_phi(phi, T, datapath):
     return bias
 
 # Emulator
-def emulator(y_pred, residuals, runs, noise_type, sigma_correction, amplitude=None, ar1_corrcoef=None, y_pred_long=None, sigma_increase_correction = None, phi_correction=False):
+def emulator(y_pred, runs, noise_type, T_analysis=None, residuals=None, amplitude=None, ar1_corrcoef=None, y_pred_long=None, sigma_correction=True, sigma_increase_correction = None, phi_correction=False):
     # Calc Noise
     if amplitude is None:
         amplitude = np.std(residuals)
+
+    if T_analysis is None:
+        if residuals is None:
+            raise ValueError("T_analysis and residuals are None [emulator_func.emulator]")
+        T_analysis = len(residuals)
+
     if y_pred_long is None:
-        T_emulator = len(residuals)
+        T_emulator = T_analysis
     else:
         T_emulator = len(y_pred_long)
 
-    #Emulator_sias = np.zeros((runs, len(residuals)))
     Emulator_sias = np.zeros((runs, T_emulator))
 
     if ar1_corrcoef is None:#noise_type=="ar1" and 
         rho, sigma = yule_walker(residuals, order=1)
-        ar1_corrcoef = rho[0] + ((1+4*rho)/len(residuals))
+        ar1_corrcoef = rho[0] + ((1+4*rho)/T_analysis)
         if ar1_corrcoef > 1:
             print("constraining phi to 1")
             ar1_corrcoef = 1
-        #ar1_corrcoef += ar1_corrcoef * 0.1
-        #print("huhu")
-    #print("Original Phi", ar1_corrcoef)
+
     if phi_correction:
-        bias_correction = find_spline_correction_phi(ar1_corrcoef, len(residuals), datapath)
+        bias_correction = find_spline_correction_phi(ar1_corrcoef, T_analysis, datapath)
         ar1_corrcoef += bias_correction
-        #print("Corrected phi", ar1_corrcoef)
         if bias_correction < 0:
             print("variability bias correction <0")
         if ar1_corrcoef > 1:
             print("constraining phi to 1")
             ar1_corrcoef = 1
-        #print("huhu")
-
 
     if sigma_correction: #(noise_type=="ar1") and 
-        bias_correction = find_spline_correction(amplitude, ar1_corrcoef, datapath, T=len(residuals))
+        bias_correction = find_spline_correction(amplitude, ar1_corrcoef, datapath, T=T_analysis)
         if bias_correction < 0:
             print("variability bias correction <0")
         amplitude += bias_correction
         if sigma_increase_correction is not None:
-            amplitude += sigma_increase_correction*amplitude #                                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    #else:
-    #    print("mist")
-        #print("Corrected sigma:", amplitude)
+            amplitude += sigma_increase_correction * amplitude  
 
-
+    # Create noisy time series
     for run in range(runs):
         if noise_type=="white":
             noise = np.random.normal(0, amplitude, T_emulator)
         elif noise_type=="ar1":
             noise = create_ar1_noise(T_emulator, amplitude, ar1_corrcoef)
-        elif noise_type=="cholesky":
-            #noise = cholesky_noise(residuals, amplitude, n_samples=1).squeeze() # check how to change to T_emulator
-            noise = cholesky_noise(residuals, amplitude, T_emulator).squeeze() # check how to change to T_emulator
         else:
             print("!!! Wrong noise name")
             return
@@ -280,46 +274,36 @@ def grab_parameters(member, df_co2, df_sia, observation_start, observation_end, 
 
 
 #Experiment
-def experiment(member, df_co2, df_sia, runs, noise_type, observation_start, observation_end, true_slope=None, amplitude=None, ar1_corrcoef=None, co2_name="rcp85", sigma_correction=True, phi_correction=False):
+def experiment(df_forcing, df_sia, runs, noise_type, observation_start, observation_end, sia_ts=None, true_slope=None, intercept=None, amplitude=None, ar1_corrcoef=None, co2_name="rcp85", sigma_correction=True, phi_correction=False):
     
-    co2 = df_co2.loc[observation_start:observation_end][co2_name]
-    sia = df_sia.loc[observation_start:observation_end][member]
-    obs_sens, y_pred, lin_timing, intercept = meta.get_meta_data(sia, co2)
-    residuals = sia - y_pred
+
+    forcing = df_forcing.loc[observation_start:observation_end][co2_name]
+
+    if sia_ts is None:
+        # Check if true_slope, intercept, amplitude , ar1_corrcoef is not None
+        if None in [true_slope, intercept, amplitude , ar1_corrcoef]:
+            raise ValueError("One of sia_ts, true_slope, intercept, amplitude , ar1_corrcoef is None")
+        else:
+            residuals = None
+            T_analysis = observation_end - observation_start +1
+            obs_sens = true_slope
+    else:
+        sia = df_sia.loc[observation_start:observation_end][sia_ts]
+        obs_sens, y_pred, lin_timing, intercept = meta.get_meta_data(sia, forcing)
+        residuals = sia - y_pred
 
     if true_slope is not None:
-        y_pred = co2 * true_slope*1e-3 + intercept # was set t 6.11 before
+        y_pred = forcing * true_slope*1e-3 + intercept # was set 6.11 before
 
-        
-    emulator_sia = emulator(y_pred, residuals, runs, noise_type, sigma_correction, amplitude, ar1_corrcoef, phi_correction=phi_correction)
+    emulator_sia = emulator(y_pred, runs, noise_type, T_analysis=T_analysis, residuals=residuals, amplitude=amplitude, ar1_corrcoef=ar1_corrcoef, sigma_correction=sigma_correction, phi_correction=phi_correction)
 
     Sensitivities = []
     for i in range(runs):
-        sens, y_pred, lin_timing, intercept = meta.get_meta_data(emulator_sia[i,:], co2)
-        #print(sens)
+        sens, y_pred, lin_timing, intercept = meta.get_meta_data(emulator_sia[i,:], forcing)
         Sensitivities.append(sens)
 
     return Sensitivities, obs_sens, emulator_sia
 
-def experiment_time(member, df_co2, df_sia, runs, noise_type, observation_start, observation_end, true_slope=None, amplitude=None, ar1_corrcoef=None, co2_name="rcp85", sigma_correction=True, phi_correction=False):
-    
-    co2 = df_co2.loc[observation_start:observation_end][co2_name]
-    sia = df_sia.loc[observation_start:observation_end][member]
-    obs_sens, y_pred, lin_timing, intercept = meta.get_meta_data(sia, co2)
-    residuals = sia - y_pred
-
-    if true_slope is not None:
-        y_pred = co2 * true_slope*1e-3 + intercept # was set t 6.11 before
-
-        
-    emulator_sia = emulator(y_pred, residuals, runs, noise_type, sigma_correction, amplitude, ar1_corrcoef, phi_correction=phi_correction)
-
-    Sensitivities = []
-    for i in range(runs):
-        sens, y_pred, lin_timing, intercept = meta.get_meta_data_time(emulator_sia[i,:])
-        #print(sens)
-        Sensitivities.append(sens)
-    return Sensitivities, obs_sens, emulator_sia
 
 def experiment_indepth(member, df_co2, df_sia, runs, noise_type, observation_start, observation_end, true_slope=None, amplitude=None, ar1_corrcoef=None, true_intercept=None, co2_name="rcp85", sigma_correction=True, phi_correction=False):
     
@@ -441,8 +425,8 @@ def experiment_indepth_long(member, df_co2, df_sia, runs, noise_type, observatio
     return Sensitivities, obs_sens, emulator_sia, Ar1_corrcoefs, Sigmas, Lin_timing, EM_timing_year, EM_timing
 
 
-def create_emulator_members(num_members, noise, df_co2, df, true_slope=None, amplitude=None, ar1_corrcoef=None, start_year=1979, end_year=2022, observed_member="mb015", dataframe=False, sigma_correction=False, co2_name="rcp45", phi_correction=False):
-    Sensitivities, background_dummy_sens, emulator_sia = experiment(observed_member, df_co2, df, num_members, noise, start_year, end_year, true_slope=true_slope, amplitude=amplitude, ar1_corrcoef=ar1_corrcoef, sigma_correction=sigma_correction, co2_name=co2_name, phi_correction=phi_correction)
+def create_emulator_members(num_members, noise, df_co2, df, true_slope=None, intercept=None, amplitude=None, ar1_corrcoef=None, start_year=1979, end_year=2022, observed_member="mb015", dataframe=False, sigma_correction=False, co2_name="rcp45", phi_correction=False):
+    Sensitivities, background_dummy_sens, emulator_sia = experiment(df_co2, df, num_members, noise, start_year, end_year, true_slope=true_slope, intercept=intercept, amplitude=amplitude, ar1_corrcoef=ar1_corrcoef, sigma_correction=sigma_correction, co2_name=co2_name, phi_correction=phi_correction)
 
     if dataframe:
         df_dummy = df.loc[start_year:end_year].iloc[:,:1].copy()
