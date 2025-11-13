@@ -84,3 +84,19 @@ def create_subfigure_label(ax, letter: str, width: float, height: float, fontsiz
     # Ensuring axis spines are on top
     for spine in ax.spines.values():
         spine.set_zorder(100)
+
+def get_colors_from_colormap(cmap, N, start=0, stop=1):
+    """
+    Gets a list of N colors from a given Matplotlib colormap.
+
+    Args:
+        cmap: The Matplotlib colormap to use.
+        N: The number of colors to generate.
+
+    Returns:
+        A list of N color tuples (r, g, b, alpha).
+    """
+
+    cmap = plt.cm.get_cmap(cmap)
+    colors = [cmap(i / (N - 1) * (stop - start) + start) for i in range(N)]
+    return colors
