@@ -425,26 +425,20 @@ def experiment_indepth_long(member, df_co2, df_sia, runs, noise_type, observatio
     return Sensitivities, obs_sens, emulator_sia, Ar1_corrcoefs, Sigmas, Lin_timing, EM_timing_year, EM_timing
 
 
-def create_emulator_members(num_members, noise, df_co2, df, true_slope=None, intercept=None, amplitude=None, ar1_corrcoef=None, start_year=1979, end_year=2022, observed_member="mb015", dataframe=False, sigma_correction=False, co2_name="rcp45", phi_correction=False):
-    Sensitivities, background_dummy_sens, emulator_sia = experiment(df_co2, df, num_members, noise, start_year, end_year, true_slope=true_slope, intercept=intercept, amplitude=amplitude, ar1_corrcoef=ar1_corrcoef, sigma_correction=sigma_correction, co2_name=co2_name, phi_correction=phi_correction)
+def create_emulator_members(num_members, noise, df_co2, true_slope=None, intercept=None, amplitude=None, ar1_corrcoef=None, start_year=1979, end_year=2024, dataframe=False, sigma_correction=False, co2_name="rcp45", phi_correction=False):
+
+    Sensitivities, background_dummy_sens, emulator_sia = experiment(df_co2, None, num_members, noise, start_year, end_year, true_slope=true_slope, intercept=intercept, amplitude=amplitude, ar1_corrcoef=ar1_corrcoef, sigma_correction=sigma_correction, co2_name=co2_name, phi_correction=phi_correction)
 
     if dataframe:
-        df_dummy = df.loc[start_year:end_year].iloc[:,:1].copy()
-        members_dummy   = mbhl.create_member_list("mb", zfill=3, N=num_members)
+        members_dummy = mbhl.create_member_list("mb", zfill=4, N=num_members)
 
         # Build a dict of new member columns
-        member_data = {
-        member: emulator_sia[i, :].copy()
-        for i, member in enumerate(members_dummy)
-        }
+        member_data = {member: emulator_sia[i, :].copy() for i, member in enumerate(members_dummy)}
 
         # Combine the original df_dummy with all new member columns at once
-        df_dummy = pd.concat([df_dummy, pd.DataFrame(member_data, index=df_dummy.index)], axis=1)
+        df_dummy = pd.DataFrame(member_data, index=np.arange(start_year,end_year+1))
 
-
-        df_dummy2 = df_dummy.copy()
-
-        return df_dummy2, Sensitivities
+        return df_dummy, Sensitivities
     else:
         return Sensitivities
     
