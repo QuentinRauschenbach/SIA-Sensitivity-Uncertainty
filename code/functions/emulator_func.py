@@ -13,10 +13,12 @@ import glob
 import pickle
 
 #datapath = "C:/Users/quentin/Documents/Uni/Thesis/data/"
-datapath = "/Users/quraus001/Documents/Uni/Thesis/data/"
+#datapath = "/Users/quraus001/Documents/Uni/Thesis/data/"
+datapath = "/Users/quraus001/Documents/Uni/SIA-Sensitivity-Uncertainty/data/" # has subfolder "splines"
 
-#np.random.seed(6)
-
+spline_files = glob.glob(datapath + "splines/splines/*/spline*")
+if len(spline_files):
+    print(f"WARNING: No spline files found in {datapath}/splines")
 
 def create_ar1_noise(n, noise_std, ar1_corrcoef):
     
@@ -27,40 +29,8 @@ def create_ar1_noise(n, noise_std, ar1_corrcoef):
 
     return noise
 
-def cholesky_noise2(data, noise_std, n_samples):#noise = np.random.normal(0, noise_std, n)
-    acf_result = sm.tsa.acf(data, fft=False, nlags=43)
-    np.append(acf_result,[0])
-    
-    x = acf_result.copy()
-    Correlation = np.zeros((len(x),len(x)))
-    Correlation[0,:] = x
-    for i in range(1,len(x)):
-        Correlation[i,:] = np.append(np.flip(x[1:i+1]),x[:-i])
-        
-    #for i in range(len(x)):
-    #    for j in range(len(x)):
-    #        covariance_matrix[i, j] = x[np.abs(i - j)]
 
-    # Ensure the autocorrelation matrix is positive definite
-    # (necessary for Cholesky decomposition)
-    #Correlation += 1e-6 * np.eye(len(Correlation))
-    
-    # Perform Cholesky decomposition
-    lower_triangle = np.linalg.cholesky(Correlation)
-
-    noise = np.random.normal(0, noise_std, size=(len(acf_result),n_samples))
-    
-    # Transform noise using the lower triangle matrix
-    # to achieve the desired autocorrelation
-    correlated_noise = lower_triangle @ noise
-
-    # Step 6: Rescale to match the desired standard deviation
-    #actual_std = np.std(correlated_noise, axis=0)  # Std dev along each sample (axis=0)
-    #rescaled_noise = correlated_noise * (noise_std / actual_std)
-    
-    return correlated_noise
-
-def cholesky_noise(data, noise_std, T):#noise = np.random.normal(0, noise_std, n)
+def cholesky_noise(data, noise_std, T):
     acf_result = sm.tsa.acf(data, fft=False, nlags=43)
     np.append(acf_result,[0])
     
@@ -75,55 +45,29 @@ def cholesky_noise(data, noise_std, T):#noise = np.random.normal(0, noise_std, n
         extended_matrix = np.zeros((T, T))
         extended_matrix[:Correlation.shape[0], :Correlation.shape[1]] = Correlation.copy()
         Correlation = extended_matrix.copy()
-
-        
-    #for i in range(len(x)):
-    #    for j in range(len(x)):
-    #        covariance_matrix[i, j] = x[np.abs(i - j)]
-
-    # Ensure the autocorrelation matrix is positive definite
-    # (necessary for Cholesky decomposition)
-    #Correlation += 1e-6 * np.eye(len(Correlation))
     
     # Perform Cholesky decomposition
     lower_triangle = np.linalg.cholesky(Correlation)
 
     noise = np.random.normal(0, noise_std, size=(T,1))
-    #print(noise.shape)
     
     # Transform noise using the lower triangle matrix
     # to achieve the desired autocorrelation
     correlated_noise = lower_triangle @ noise
-    #print(correlated_noise.shape)
-
-    # Step 6: Rescale to match the desired standard deviation
-    #actual_std = np.std(correlated_noise, axis=0)  # Std dev along each sample (axis=0)
-    #rescaled_noise = correlated_noise * (noise_std / actual_std)
     
     return correlated_noise
-
-def find_spline_file(sigma, datapath, T=43):
-    files  = glob.glob(f"{datapath}splines/spline_sigma_*_T_{T}.pkl")
-    Sigmas = np.array(list(set([float(x.split("_")[-3]) for x in files])))
-    diff   = Sigmas - sigma
-
-    closest_sigma_idx = np.where(abs(diff)==np.nanmin(abs(diff)))[0][0]
-    closest_sigma = Sigmas[closest_sigma_idx]
-
-    file = glob.glob(f"{datapath}splines/spline_sigma_{closest_sigma}_T_{T}.pkl")[0]
-    return file
 
 def find_spline_correction(sigma, phi, datapath, T=43):
 
     # Fetch and sort unique sigma values from file names
-    files = glob.glob(f"{datapath}splines/spline_sigma_*_T_{T}.pkl")
+    files = glob.glob(f"{datapath}splines/sigma/spline_sigma_*_T_{T}.pkl")
     Sigmas = np.array(sorted({float(x.split("_")[-3]) for x in files}))
     Sigmas_filtered = Sigmas[Sigmas >= sigma]
 
     if len(Sigmas_filtered)==0:
         print("!!! sigma value higher than available spline fits", sigma)
         print("    Taking the highest available value", Sigmas[-1])
-        file = glob.glob(f"{datapath}splines/spline_sigma_{Sigmas[-1]}_T_{T}.pkl")[0]
+        file = glob.glob(f"{datapath}splines/sigma/spline_sigma_{Sigmas[-1]}_T_{T}.pkl")[0]
         with open(file, 'rb') as f:
             loaded_spline = pickle.load(f)
             bias = loaded_spline(phi)
@@ -137,7 +81,7 @@ def find_spline_correction(sigma, phi, datapath, T=43):
         for Sigma in Sigmas_filtered:
             #print(Sigma, T)
             #print(glob.glob(f"{datapath}splines/spline_sigma_*_T_*.pkl"))
-            file = glob.glob(f"{datapath}splines/spline_sigma_{Sigma:.2f}_T_{T}.pkl")[0]
+            file = glob.glob(f"{datapath}splines/sigma/spline_sigma_{Sigma:.2f}_T_{T}.pkl")[0]
             with open(file, 'rb') as f:
                 loaded_spline = pickle.load(f)
                 sigma_hat = Sigma - loaded_spline(phi)
@@ -149,7 +93,6 @@ def find_spline_correction(sigma, phi, datapath, T=43):
                     Bias[sigma_hat.item()] = loaded_spline(phi.item())
                 except:
                     Bias[sigma_hat.item()] = loaded_spline(phi)
-                #Bias[sigma_hat] = loaded_spline(phi)
 
         # Convert Sigma_hats keys and values to NumPy arrays for indexing
         Sigma_hats = np.array(list(Bias.keys()))
