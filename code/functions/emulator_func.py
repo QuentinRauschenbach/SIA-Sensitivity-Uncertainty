@@ -184,18 +184,18 @@ def emulator(y_pred, runs, noise_type, T_analysis=None, residuals=None, amplitud
 
 ###
 
-def grab_parameters(member, df_co2, df_sia, observation_start, observation_end, amplitude=None, ar1_corrcoef=None, forcing="rcp85", sigma_correction=True, phi_correction=False):
+def grab_parameters(member, df_forcing, df_sia, observation_start, observation_end, amplitude=None, ar1_corrcoef=None, forcing="rcp85", sigma_correction=True, phi_correction=False, co2_units=True):
     
-    co2 = df_co2.loc[observation_start:observation_end][forcing]
-    sia = df_sia.loc[observation_start:observation_end][member]
-    obs_sens, y_pred, lin_timing, intercept = meta.get_meta_data(sia, co2)
+    forcing = df_forcing.loc[observation_start:observation_end][forcing]
+    sia     = df_sia.loc[observation_start:observation_end][member]
+    obs_sens, y_pred, lin_timing, intercept = meta.get_meta_data(sia, df_forcing, co2_units=co2_units)
     residuals = sia - y_pred
 
     # Calc Noise
     if amplitude is None:
         amplitude = np.std(residuals)
 
-    if ar1_corrcoef is None:#noise_type=="ar1" and 
+    if ar1_corrcoef is None:
         rho, sigma = yule_walker(residuals, order=1)
         ar1_corrcoef = rho[0] + ((1+4*rho)/len(residuals))
         if ar1_corrcoef > 1:
@@ -210,9 +210,8 @@ def grab_parameters(member, df_co2, df_sia, observation_start, observation_end, 
         if ar1_corrcoef > 1:
             print("constraining phi to 1")
             ar1_corrcoef = 1
-        #print("huhu")
 
-    if sigma_correction: #(noise_type=="ar1") and 
+    if sigma_correction: 
         bias_correction = find_spline_correction(amplitude, ar1_corrcoef, datapath, T=len(residuals))
         if bias_correction < 0:
             print("variability bias correction <0")
@@ -222,7 +221,7 @@ def grab_parameters(member, df_co2, df_sia, observation_start, observation_end, 
 
 
 #Experiment
-def experiment(df_forcing, df_sia, runs, noise_type, observation_start, observation_end, sia_ts=None, true_slope=None, intercept=None, amplitude=None, ar1_corrcoef=None, co2_name="rcp85", sigma_correction=True, phi_correction=False):
+def experiment(df_forcing, df_sia, runs, noise_type, observation_start, observation_end, sia_ts=None, true_slope=None, intercept=None, amplitude=None, ar1_corrcoef=None, co2_name="rcp85", sigma_correction=True, phi_correction=False, co2_units=True):
     
 
     forcing = df_forcing.loc[observation_start:observation_end][co2_name]
@@ -237,98 +236,67 @@ def experiment(df_forcing, df_sia, runs, noise_type, observation_start, observat
             obs_sens = true_slope
     else:
         sia = df_sia.loc[observation_start:observation_end][sia_ts]
-        obs_sens, y_pred, lin_timing, intercept = meta.get_meta_data(sia, forcing)
+        obs_sens, y_pred, lin_timing, intercept = meta.get_meta_data(sia, forcing, co2_units=co2_units)
         residuals = sia - y_pred
+        T_analysis = len(residuals)
 
     if true_slope is not None:
-        y_pred = forcing * true_slope*1e-3 + intercept # was set 6.11 before
+        if co2_units:
+            true_slope = true_slope *1e-3
+        y_pred = forcing * true_slope + intercept # was set 6.11 before #deleted 
 
     emulator_sia = emulator(y_pred, runs, noise_type, T_analysis=T_analysis, residuals=residuals, amplitude=amplitude, ar1_corrcoef=ar1_corrcoef, sigma_correction=sigma_correction, phi_correction=phi_correction)
 
     Sensitivities = []
     for i in range(runs):
-        sens, y_pred, lin_timing, intercept = meta.get_meta_data(emulator_sia[i,:], forcing)
+        sens, y_pred, lin_timing, intercept = meta.get_meta_data(emulator_sia[i,:], forcing, co2_units=co2_units)
         Sensitivities.append(sens)
 
     return Sensitivities, obs_sens, emulator_sia
 
-
-def experiment_indepth(member, df_co2, df_sia, runs, noise_type, observation_start, observation_end, true_slope=None, amplitude=None, ar1_corrcoef=None, true_intercept=None, co2_name="rcp85", sigma_correction=True, phi_correction=False):
+def experiment_indepth_long(df_sia, df_forcing, runs, noise_type, observation_start, observation_end, sia_ts, true_slope=None, intercept=None, amplitude=None, ar1_corrcoef=None, co2_name="rcp85", sigma_correction=True, prediction_end=None, df_co2_long = None, sigma_increase_correction=None, phi_correction=False, co2_units=True):
     
-    co2 = df_co2.loc[observation_start:observation_end][co2_name]
-    sia = df_sia.loc[observation_start:observation_end][member]
-    obs_sens, y_pred, lin_timing, intercept = meta.get_meta_data(sia, co2)
-    residuals = sia - y_pred
+    forcing = df_forcing.loc[observation_start:observation_end][co2_name]
 
-    if true_intercept is None:
-        true_intercept = intercept # was set t 6.11 before
-
-    if true_slope is not None:
-        y_pred = co2 * true_slope*1e-3 + true_intercept
-        
-    emulator_sia = emulator(y_pred, residuals, runs, noise_type, sigma_correction, amplitude, ar1_corrcoef, phi_correction=phi_correction)
-
-    Sensitivities = []
-    Ar1_corrcoefs = []
-    Sigmas = []
-    Lin_timing = []
-    #EM_timing = []
-    for i in range(runs):
-        sens, y_pred, lin_timing, intercept = meta.get_meta_data(emulator_sia[i,:], co2)
-        #print(sens)
-        Sensitivities.append(sens)
-        residuals = emulator_sia[i,:] - y_pred
-        Sigmas.append(np.std(residuals))
-        Lin_timing.append(lin_timing)
-
-        #ice_free_index = meta.find_icefree_idx(emulator_sia[i,:], amount_icefree=1, threshold_value=1)
-        #print(ice_free_index)
-
-        #print(co2[ice_free_index])
-        #EM_timing.append(co2[ice_free_index])
-
-        if noise_type=="ar1":
-            rho, sigma = yule_walker(residuals, order=1)
-            ar1_corrcoef = rho[0] + ((1+4*rho)/len(residuals))
-            Ar1_corrcoefs.append(ar1_corrcoef.item())
-
-    return Sensitivities, obs_sens, emulator_sia, Ar1_corrcoefs, Sigmas, Lin_timing
-
-def experiment_indepth_long(member, df_co2, df_sia, runs, noise_type, observation_start, observation_end, true_slope=None, amplitude=None, ar1_corrcoef=None, true_intercept=None, co2_name="rcp85", sigma_correction=True, prediction_end=None, df_co2_long = None, sigma_increase_correction=None, slope_correction = None, phi_correction=False):
-    
-    co2 = df_co2.loc[observation_start:observation_end][co2_name]
-    sia = df_sia.loc[observation_start:observation_end][member]
-    obs_sens, y_pred, lin_timing, intercept = meta.get_meta_data(sia, co2)
-    if slope_correction is not None:
-        obs_sens = obs_sens*slope_correction
-    y_pred = co2 * obs_sens*1e-3 + intercept#############################################################################################
-    residuals = sia - y_pred
+    if sia_ts is None:
+        # Check if true_slope, intercept, amplitude , ar1_corrcoef is not None
+        if None in [true_slope, intercept, amplitude , ar1_corrcoef]:
+            raise ValueError("One of sia_ts, true_slope, intercept, amplitude, ar1_corrcoef is None")
+        else:
+            residuals = None
+            T_analysis = observation_end - observation_start +1
+            obs_sens = true_slope
+    else:
+        sia = df_sia.loc[observation_start:observation_end][sia_ts]
+        obs_sens, y_pred, lin_timing, intercept = meta.get_meta_data(sia, forcing, co2_units=False)
+        residuals = sia - y_pred
+        T_analysis = len(residuals)
 
     if prediction_end is not None:
-        #co2_long = np.array(df_co2_long.loc[observation_start:prediction_end])
-        #print(df_co2_long)
+
         if df_co2_long is not None:
             co2_scenario = np.array(df_co2_long.loc[observation_end:prediction_end])
-            diff = df_co2.loc[observation_end][co2_name] - df_co2_long.loc[observation_end]
-            co2_long = np.append(co2, co2_scenario + diff)
+            diff = df_forcing.loc[observation_end][co2_name] - df_co2_long.loc[observation_end]
+            co2_long = np.append(forcing, co2_scenario + diff)
         else:
-            co2_long = np.array(df_co2[co2_name].loc[observation_start:prediction_end])
-        y_pred_long = co2_long * obs_sens *1e-3 + intercept #np.concatenate((y_pred, arr2))
+            co2_long = np.array(df_forcing[co2_name].loc[observation_start:prediction_end])
+
+        y_pred_long = co2_long * obs_sens + intercept #np.concatenate((y_pred, arr2))
     else:
         y_pred_long = None
 
-    # mannual values
-    if true_intercept is None:
-        true_intercept = 6.11
-
     if true_slope is not None:
-        y_pred = co2 * true_slope*1e-3 + true_intercept
+        if co2_units:
+            true_slope = true_slope *1e-3
+        y_pred = forcing * true_slope + intercept
         if prediction_end is not None:
-            y_pred_long = co2_long * true_slope*1e-3 + true_intercept
+            y_pred_long = co2_long * true_slope + intercept
 
 
     # emulate sia    
-    emulator_sia = emulator(y_pred, residuals, runs, noise_type, sigma_correction, amplitude, ar1_corrcoef, y_pred_long, sigma_increase_correction, phi_correction=phi_correction)
+    emulator_sia = emulator(y_pred, runs, noise_type,  T_analysis=T_analysis, residuals=residuals, 
+                            amplitude=amplitude, ar1_corrcoef=ar1_corrcoef, y_pred_long=y_pred_long, 
+                            sigma_correction=sigma_correction, sigma_increase_correction = sigma_increase_correction, phi_correction=phi_correction)
 
     # read out emulated sia
     Sensitivities = []
@@ -338,12 +306,8 @@ def experiment_indepth_long(member, df_co2, df_sia, runs, noise_type, observatio
     EM_timing = []
     EM_timing_year = []
 
-    #plt.figure()
-    #plt.plot(co2_long,y_pred_long)
-
     for i in range(runs):
-        sens, y_pred, lin_timing, intercept = meta.get_meta_data(emulator_sia[i,:len(residuals)], co2)
-        #print(sens)
+        sens, y_pred, lin_timing, intercept = meta.get_meta_data(emulator_sia[i,:len(residuals)], forcing, co2_units=co2_units)
         Sensitivities.append(sens)
         residuals = emulator_sia[i,:len(residuals)] - y_pred
         Sigmas.append(np.std(residuals))
@@ -356,20 +320,14 @@ def experiment_indepth_long(member, df_co2, df_sia, runs, noise_type, observatio
         else:
             EM_timing.append(co2_long[-1])
             EM_timing_year.append(prediction_end)
-        #print(ice_free_index)
-        #print(len(emulator_sia[i,:]), len(co2_long))
-        #plt.figure()
-        
-        #plt.plot(co2_long,emulator_sia[i,:])
-        #plt.scatter([co2_long[ice_free_index]], [emulator_sia[i,:][ice_free_index]], alpha=0.1)
-        #print(co2_long[ice_free_index])
-        #EM_timing.append(co2_long[ice_free_index])
 
         if noise_type=="ar1":
             rho, sigma = yule_walker(residuals, order=1)
             ar1_corrcoef = rho[0] + ((1+4*rho)/len(residuals))
             Ar1_corrcoefs.append(ar1_corrcoef.item())
 
+    if co2_units:
+        obs_sens = obs_sens * 1e3
     return Sensitivities, obs_sens, emulator_sia, Ar1_corrcoefs, Sigmas, Lin_timing, EM_timing_year, EM_timing
 
 

@@ -44,7 +44,7 @@ def find_icefree_idx(sia, amount_icefree=1, threshold_value=1, printing=True):
             print("never ice free")
         return False
 
-def get_meta_data(sia:np.ndarray, forcing:np.ndarray, start:float = None, stop:float = None, co2:bool = True):
+def get_meta_data(sia:np.ndarray, forcing:np.ndarray, start:float = None, stop:float = None, co2_units:bool = True):
 
     """
     Perform a linear regression of sea ice area (SIA) against a forcing variable and compute metadata.
@@ -63,13 +63,13 @@ def get_meta_data(sia:np.ndarray, forcing:np.ndarray, start:float = None, stop:f
         Starting index for a subset of the data (default is None, meaning use all data).
     stop : float, optional
         Ending index for a subset of the data (default is None, meaning use all data).
-    co2 : bool, optional
-        If True, converts slope to m/s (default is True).
+    co2_units : bool, optional
+        If True, converts slope to m2/t (default is True).
 
     Returns
     -------
     sens : float
-        Sensitivity of SIA to forcing (slope of regression, optionally scaled to m/s).
+        Sensitivity of SIA to forcing (slope of regression, optionally scaled to m2/t).
     y_pred : np.ndarray
         Predicted SIA values from the regression over the full forcing array.
     lin_timing : float
@@ -89,7 +89,7 @@ def get_meta_data(sia:np.ndarray, forcing:np.ndarray, start:float = None, stop:f
 
     # write down results
     sens       = result.slope
-    if co2:
+    if co2_units:
         sens = sens *1e3 # convert to m2/t
     lin_timing = -(result.intercept-1)/(result.slope)
     intercept  = result.intercept 
@@ -97,7 +97,7 @@ def get_meta_data(sia:np.ndarray, forcing:np.ndarray, start:float = None, stop:f
     
     return sens, y_pred, lin_timing, intercept
 
-def get_meta_data_indepth(sia:np.ndarray, forcing:np.ndarray, start:float=None, stop:float=None, co2:bool = True):
+def get_meta_data_indepth(sia:np.ndarray, forcing:np.ndarray, start:float=None, stop:float=None, co2_units:bool = True):
 
     """
     Perform an in-depth linear regression of SIA against CO2 and compute regression metadata.
@@ -109,8 +109,8 @@ def get_meta_data_indepth(sia:np.ndarray, forcing:np.ndarray, start:float=None, 
     ----------
     sia : np.ndarray
         Array of sea ice area (SIA) values.
-    co2 : np.ndarray
-        Array of CO2 concentration values corresponding to SIA.
+    forcing : np.ndarray
+        Array of CO2 concentration or GMST values corresponding to SIA.
     start : float, optional
         Starting index for a subset of the data (default is None, meaning use all data).
     stop : float, optional
@@ -143,7 +143,7 @@ def get_meta_data_indepth(sia:np.ndarray, forcing:np.ndarray, start:float=None, 
 
     # write down results
     sens        = result.slope
-    if co2:
+    if co2_units:
         sens = sens *1e3 # convert to m2/t
     lin_timing  = -(result.intercept-1)/(result.slope)
     intercept   = result.intercept 

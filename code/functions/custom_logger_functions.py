@@ -12,7 +12,7 @@ Functions:
 - build_terminal_logger(logLevel, logger_name): Create and configure a logger with the given name and level.
 """
 
-def build_terminal_logger(logger_name, logLevel):
+def build_terminal_logger(logLevel, logger_name):
     """
     Create and configure a terminal logger with a given name and log level.
 
