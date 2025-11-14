@@ -223,6 +223,11 @@ def emulator(y_pred, runs, noise_type, T_analysis=None, residuals=None, amplitud
             noise = np.random.normal(0, amplitude, T_emulator)
         elif noise_type=="ar1":
             noise = create_ar1_noise(T_emulator, amplitude, ar1_corrcoef)
+        elif noise_type=="cholesky":
+            if residuals is None:
+                raise ValueError("residuals can't be None for cholesky noise [emulator_func.emulator]")
+            else:
+                noise = cholesky_noise(residuals, amplitude, T_emulator).squeeze()
         else:
             print("!!! Wrong noise name")
             return
