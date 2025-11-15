@@ -9,12 +9,12 @@ This repository contains the code used in the paper:
 ## Overview
 
 This project implements a **linear AR(1) emulator** to analyze the response of Arctic summer Sea Ice Area (SIA) to external forcing (anthropogenic CO₂ emissions and global mean surface temperature (GMST)). 
-The emulator is constructed directly from observational records and reproduces the internal variability, memory, and background forcing of the Arctic SIA time series.
+The emulator runs directly from observational records and reproduces the internal variability, memory, and background forcing of the Arctic SIA time series.
 
 ## Repository Contents
 
 - `code/` : Python scripts for emulator construction, experiments, and analyses
-  - `.ipynb` for data processing & paper figure creation
+  - `.ipynb` for data processing & paper figure plotting
   - `functions/` : `.py` scripts containing the emulator and helper functions 
   - _doc strings were created using ChatGPT and checked by hand_
 - `data/SIA/` : Subset of UHH-SIA (see below), september only
@@ -26,9 +26,8 @@ The emulator is constructed directly from observational records and reproduces t
 ### Sea Ice Area (SIA)
 
 - **Original dataset:** Rauschenbach, Q., Dörr, J., Notz, D., Kern, S., 2024, *UHH sea-ice area product, 1850-2023*, University of Hamburg, v2024_fv0.01, https://doi.org/10.25592/uhhfdm.11346
-- **Extended version (this repository / Z):** includes data up to [extended year], contributed by Sarah Thomae.  
+- **Extended version (this repository / Zenodo):** includes data up to 2024, contributed by Sarah Thomae.  
 - **License:** CC-BY 4.0  
-- **Format:** NetCDF (.nc), original metadata preserved.
 
 ### Temperature datasets
 
