@@ -1,6 +1,6 @@
 # What is the Observed Sensitivity of Arctic Sea Ice?
 
-This repository contains the code and data used in the paper:
+This repository contains the code used in the paper:
 
 **Rauschenbach, Q., Wernecke, A., and Notz, D. (2025)**  
 *What is the Observed Sensitivity of Arctic Sea Ice?*
@@ -8,22 +8,20 @@ This repository contains the code and data used in the paper:
 
 ## Overview
 
-This project implements a **linear AR(1) emulator** to analyze the response of Arctic summer Sea Ice Area (SIA) to external forcing (anthropogenic CO₂ emissions and global mean surface temperature (GMST)). The emulator estimates:
-
-- Arctic summer SIA sensitivity: **2.3 ± 0.5 m² SIA loss per ton CO₂**
-- Arctic summer SIA sensitivity to GMST: **3.3 ± 1 million m² SIA loss per °C**
-
+This project implements a **linear AR(1) emulator** to analyze the response of Arctic summer Sea Ice Area (SIA) to external forcing (anthropogenic CO₂ emissions and global mean surface temperature (GMST)). 
 The emulator is constructed directly from observational records and reproduces the internal variability, memory, and background forcing of the Arctic SIA time series.
 
 ## Repository Contents
 
 - `code/` : Python scripts for emulator construction, experiments, and analyses
-  - Includes fully documented functions with NumPy-style docstrings.
-- `data/processed_temperature/` : Rebasing of historical temperature datasets (GISSTEMPv4, BerkeleyEarth, NOAA, HadCRUT4, Kadow et al. 2025)
-- `data/SIA/` : Extended observational SIA dataset (1850–[extended year])
-- `data/CO2/` : Processed anthropogenic CO₂ emissions (fossil fuel + land-use change, converted to tonnes CO₂)
+  - `.ipynb` for data processing & paper figure creation
+  - `functions/` : `.py` scripts containing the emulator and helper functions 
+  - _doc strings were created using ChatGPT and checked by hand_
+- `data/SIA/` : Subset of UHH-SIA (see below), september only
+- `data/CO2/` : Processed data can't be shared for licencing reasons (for raw data check the links provided below)
+- `data/GMST/` : Processed data can't be shared for licencing reasons (for raw data check the links provided below)
 
-## Observational Data
+## Used Data
 
 ### Sea Ice Area (SIA)
 
@@ -48,9 +46,9 @@ Processed from multiple sources and rebased to 1951–1980:
 
 - **Source:** Global Carbon Budget (Excel sheets), processed into tonnes CO₂, summing fossil fuel and land-use change contributions.  
 
-## Model Data (CMIP6)
+### Model Data (CMIP6)
 
-- **Models:** MPI-ESM2-1-LR / MPI-GE  
+- **Model:** MPI-ESM2-1-LR / MPI-GE CMIP6 
 - **Data hosted:** DKRZ Levante system  
 - **Accessible via:** ESGF search (Earth System Grid Federation)
 
@@ -60,17 +58,6 @@ Processed from multiple sources and rebased to 1951–1980:
 
 The core Python functions allow you to:
 
-- Construct AR(1) and Cholesky-noise emulators of SIA time series.
+- Construct AR(1) emulators of SIA time series.
 - Estimate sea-ice sensitivities for different forcing scenarios.
 - Reproduce figures and analyses from the paper.
-
-**Example usage:**
-
-```python
-from emulator_func import emulator, experiment, create_emulator_members
-
-# Generate 50 emulator members for AR1 noise
-sensitivities, obs_sens, emulator_sia = experiment(df_forcing, df_sia, 50, "ar1",
-                                                   observation_start=1979,
-                                                   observation_end=2024,
-                                                   sia_ts="YourSIAColumn")
