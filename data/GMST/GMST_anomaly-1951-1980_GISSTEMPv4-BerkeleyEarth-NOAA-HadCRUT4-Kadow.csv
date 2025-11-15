@@ -11,6 +11,7 @@
 # downloaded from https://www.metoffice.gov.uk/hadobs/hadcrut5/data/HadCRUT.5.0.2.0/download.html on 02.05.2025
 # Kadow et al. 2025: AI-infilled HadCRUT4
 # downloaded from https://doi.org/10.5281/zenodo.15622091 on 05.08.2025
+# License / Terms: Redistribution of processed data is subject to original dataset licenses
 # Year, GISSTEMPv4, BerkeleyEarth, NOAA, HadCRUT4, Kadow, NOAA_rebased, HadCRUT4_rebased, Kadow_rebased
 1850,,-0.436,-0.496959,-0.4177114,-0.4601253,-0.2202575,-0.3411090852533334,-0.37567252
 1851,,-0.321,-0.390814,-0.2333498,-0.4397429,-0.1141125,-0.15674748525333337,-0.3552901
