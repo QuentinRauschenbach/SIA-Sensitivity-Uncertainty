@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
 import numpy as np
-import logging
 
 def save_plot(file_path: str, save_plots: bool, file_types=["png"], dpi: float = 200, transparent=False):
     """Saves the current plot to specified file formats.
