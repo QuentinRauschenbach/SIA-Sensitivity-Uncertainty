@@ -43,7 +43,8 @@ Processed from multiple sources and rebased to 1951–1980:
 
 ### Anthropogenic CO₂
 
-- **Source:** [Global Carbon Budget (2024)](https://globalcarbonbudget.org/archive/), processed into tonnes CO₂, summing fossil fuel and land-use change contributions.  
+- **Source:** [Global Carbon Budget (2024)](https://globalcarbonbudget.org/archive/)
+- processed into tonnes CO₂, summing fossil fuel and land-use change contributions in MS Excel.  
 
 ### Model Data (CMIP6)
 
