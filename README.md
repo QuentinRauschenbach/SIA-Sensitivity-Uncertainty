@@ -18,8 +18,8 @@ The emulator runs directly from observational records and reproduces the interna
   - `functions/` : `.py` scripts containing the emulator and helper functions 
   - _doc strings were created using ChatGPT and checked by hand_
 - `data/SIA/` : Subset of UHH-SIA (see below), september only
-- `data/CO2/` : Processed data can't be shared for licencing reasons (for raw data check the links provided below)
-- `data/GMST/` : Processed data can't be shared for licencing reasons (for raw data check the links provided below)
+- `data/CO2/` : Processed data are not shared for licencing reasons (for raw data check the links provided below)
+- `data/GMST/` : Processed data are not shared for licencing reasons (for raw data check the links provided below)
 
 ## Used Data
 
@@ -43,7 +43,7 @@ Processed from multiple sources and rebased to 1951–1980:
 
 ### Anthropogenic CO₂
 
-- **Source:** Global Carbon Budget (Excel sheets), processed into tonnes CO₂, summing fossil fuel and land-use change contributions.  
+- **Source:** [Global Carbon Budget (2024)](https://globalcarbonbudget.org/archive/), processed into tonnes CO₂, summing fossil fuel and land-use change contributions.  
 
 ### Model Data (CMIP6)
 
