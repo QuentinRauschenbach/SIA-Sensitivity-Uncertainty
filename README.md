@@ -14,7 +14,7 @@ The emulator runs directly from observational records and reproduces the interna
 ## Repository Contents
 
 - `code/` : Python scripts for emulator construction, experiments, and analyses
-  - `.ipynb` for data processing & paper figure plotting
+  - `.ipynb` for data processing & paper figure plotting. Files with the ending `_Figure.ipynb` indicate scripts used for plotting.
   - `functions/` : `.py` scripts containing the emulator and helper functions 
   - _doc strings were created using ChatGPT and checked by hand_
 - `data/SIA/` : Subset of UHH-SIA (see below), september only
