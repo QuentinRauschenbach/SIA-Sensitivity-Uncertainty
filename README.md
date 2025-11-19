@@ -39,7 +39,7 @@ Processed from multiple sources and rebased to 1951–1980:
 | BerkeleyEarth  | [ESSD](https://doi.org/10.5194/essd-12-3469-2020) |  |
 | NOAA GlobalTemp | [NOAA](https://www.ncei.noaa.gov/products/land-based-station/noaa-global-temp) | Rebasing applied |
 | HadCRUT5       | [MetOffice](https://www.metoffice.gov.uk/hadobs/hadcrut5/data/HadCRUT.5.0.2.0/download.html) | Rebasing applied |
-| Kadow et al. 2025 | [Zenodo DOI](https://doi.org/10.5281/zenodo.15622091) | AI-infilled HadCRUT4, rebasing applied |
+| Kadow et al. 2025 | [Zenodo DOI](https://doi.org/10.5281/zenodo.15622091) | AI-infilled HadCRUT5, rebasing applied |
 
 ### Anthropogenic CO₂
 
@@ -48,7 +48,7 @@ Processed from multiple sources and rebased to 1951–1980:
 
 ### Model Data (CMIP6)
 
-- **Model:** MPI-ESM2-1-LR / MPI-GE CMIP6 
+- **Model:** MPI-ESM2-1-LR / MPI-GE CMIP6 [(Olonscheck et al., 2023)](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2023MS003790)
 - **Data hosted:** DKRZ Levante system  
 - **Accessible via:** ESGF search (Earth System Grid Federation)
 
