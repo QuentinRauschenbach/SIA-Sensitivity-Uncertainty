@@ -26,7 +26,7 @@ The emulator runs directly from observational records and reproduces the interna
 ### Sea Ice Area (SIA)
 
 - **Original dataset:** Rauschenbach, Q., Dörr, J., Notz, D., Kern, S., 2024, *UHH sea-ice area product, 1850-2023*, University of Hamburg, v2024_fv0.01, https://doi.org/10.25592/uhhfdm.11346
-- **Extended version (this repository / Zenodo):** includes data up to 2024, contributed by Sarah Thomae.  
+- **Extended version (this repository):** includes data up to 2024, contributed by Sarah Thomae.  
 - **License:** CC-BY 4.0  
 
 ### Temperature datasets
